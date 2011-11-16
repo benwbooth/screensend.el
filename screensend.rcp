@@ -1,4 +1,4 @@
-(:name screensend.el
+(:name screensend
   :website "http://github.com/benbooth5/screensend.el"
   :description "Send blocks of text from emacs to screen or tmux sessions"
   :type git
