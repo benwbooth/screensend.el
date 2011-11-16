@@ -61,10 +61,8 @@
 
 ;;; Code:
 
-;;;###autoload
 (defun screen-list ()
   "Get list of active screen sessions."
-  (interactive)
   (let ((output (with-output-to-string
                   (with-current-buffer standard-output
                     (call-process "screen" nil '(t nil) nil "-list"))))
@@ -109,10 +107,8 @@ block of text to the dedicated multi-term buffer"
     (delete-file tmpfile)
     (deactivate-mark)))
 
-;;;###autoload
 (defun tmux-list ()
   "Get list of active tmux sessions."
-  (interactive)
   (let ((output (with-output-to-string
                   (with-current-buffer standard-output
                     (call-process "tmux" nil '(t nil) nil "list-sessions"))))
