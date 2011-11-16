@@ -1,13 +1,14 @@
-;;; screensend.el --- 
+;;; screensend.el --- Send blocks of text from emacs to screen or tmux sessions.
 
 ;; Copyright (C) 2010-2011 Ben Booth
 ;; Author: Ben Booth <benwbooth@gmail.com>
+;; Maintainer: Ben Booth <benwbooth@gmail.com>
 ;; Created: 2011-11-16
 ;; Version: 1.0.0
 ;; Keywords: lisp, screen, tmux, send, terminal
-;; EmacsWiki: http://www.emacswiki.org/emacs/RainbowDelimiters
-;; Github: http://github.com/jlr/rainbow-delimiters
-;; URL: http://www.emacswiki.org/emacs/download/rainbow-delimiters.el
+;; EmacsWiki: http://www.emacswiki.org/emacs/ScreenSend
+;; Github: https://github.com/benbooth5/screensend.el 
+;; URL: https://raw.github.com/benbooth5/screensend.el/master/screensend.el 
 
 ;; This program is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
@@ -22,117 +23,43 @@
 ;; You should have received a copy of the GNU General Public License
 ;; along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ;;; Commentary:
-;;
-;; Rainbow-delimiters is a “rainbow parentheses”-like mode which highlights
-;; parentheses, brackets, and braces according to their depth. Each
-;; successive level is highlighted in a different color. This makes it easy
-;; to spot matching delimiters, orient yourself in the code, and tell which
-;; statements are at a given level.
-;;
-;; Great care has been taken to make this mode FAST. You should see no
-;; discernible change in scrolling or editing speed while using it,
-;; even in delimiter-rich languages like Clojure, Lisp, and Scheme.
-;;
-;; Default colors are subtle, with the philosophy that syntax highlighting
-;; shouldn't being visually intrusive. Color schemes are always a matter
-;; of taste.  If you take the time to design a new color scheme,
-;; please share it (even a simple list of colors works) on the EmacsWiki
-;; page or via github.
-;; EmacsWiki: http://www.emacswiki.org/emacs/RainbowDelimiters
-;; Github: http://github.com/jlr/rainbow-delimiters
-
-
-;;; Installation:
-
-;; 1. Place rainbow-delimiters.el on your emacs load-path.
-;;
-;; 2. Compile the file (necessary for speed):
-;; M-x byte-compile-file <location of rainbow-delimiters.el>
-;;
-;; 3. Add the following to your dot-emacs/init file:
-;; (require 'rainbow-delimiters)
-;;
-;; 4. Activate the mode in your init file.
-;;    You can choose to enable it only in certain modes, or Emacs-wide:
-;;
-;; - To enable it only in specific modes, add lines like the following:
-;; (add-hook 'clojure-mode-hook 'rainbow-delimiters-mode)
-;;
-;; - To activate the mode globally, add to your init file:
-;; (global-rainbow-delimiters-mode)
-;;
-;; - To temporarily activate rainbow-delimiters mode in an open buffer:
-;; M-x rainbow-delimiters-mode
-;;
-;; - To toggle global-rainbow-delimiters-mode:
-;; M-x global-rainbow-delimiters-mode
-
-;;; Customization:
-
-;; To customize various options, including the color scheme:
-;; M-x customize-group rainbow-delimiters
-;;
-;; color-theme.el users:
-;; If you use the color-theme package, you can specify custom colors
-;; by adding the appropriate faces to your theme.
-;; - Faces take the form of:
-;;   'rainbow-delimiters-depth-#-face' with # being the depth.
-;;   Depth begins at 1, the outermost color.
-;;   Faces exist for depths 1-9.
-;; - The unmatched delimiter face (normally colored red) is:
-;;   'rainbow-delimiters-unmatched-face'
-
-
-;;; Change Log:
-
-;; 1.0 - Initial release.
-;; 1.1 - Stop tracking each delimiter's depth independently.
-;;       This had lead to confusing results when viewing clojure
-;;       code. Instead, just color based on current nesting inside
-;;       all delimiters combined.
-;;     - Added 'all-delimiters' faces to apply a color scheme to
-;;       all delimiters at once. Other faces inherit from this group.
-;; 1.1.1 - Change color scheme to a lighter, more subtle style.
-;; 1.1.2: (2011-03-25)
-;;  - Add an unmatched-delimiter face and correct problem with
-;;    coloring of text following unmatched closing delims.
-;; 1.2: (2011-03-28)
-;;  - Unify delimiter faces: all delimiter types now use the same depth
-;;    faces, of form 'rainbow-delimiters-depth-#-face'.
-;; 1.2.1: (2011-03-29)
-;;  - Conform to ELPA conventions.
-;; 1.3: (2011-05-24)
-;;  - Add separate color schemes for light and dark background modes.
-;;  - Checkboxes to enable/disable highlighting for each delimiter type.
-;;  - Improvements to Customize interface.
-;;  - Infinite depth support by cycling through defined faces repeatedly.
-;;  - Documentation changes.
-;; 1.3.1 (2011-05-25)
-;;  - Light color theme appears entirely grey on SRGB monitors. Revert to
-;;    old color theme until a nicer light background theme can be added.
-;;  - Correct typo in the installation step for users of dark backgrounds.
-;; 1.3.2 (2011-10-14)
-;;  - Add 'global-rainbow-delimiters-mode'.
-;;  - Respect syntax of current buffer major-mode so delimiters
-;;    highlight correctly in non-lisp languages.
-
-;;; TODO:
-
-;; - Add support for independent depth tracking of each delimiter type
-;;   for users of C-like languages.
-;; - Python style - increase depth with each new indentation.
-;; - Add support for nested tags (XML, HTML)
-;; - Set up proper example color-theme.el themes for rainbow-delimiters mode.
-;; - Intelligent support for other languages: Ruby, LaTeX tags, et al.
-
-;;; Issues:
-
-;; - Rainbow-delimiters mode does not appear to change the color of
-;;   delimiters when Org-mode is also enabled.
-
+;;;
+;;; screensend.el
+;;; -------------
+;;; 
+;;; Simple Emacs script to allow you to send selected blocks of text to a
+;;; running screen or tmux session. This is useful for sending text to interactive
+;;; programs like clojure, psql, etc. in cases where the built-in term-mode is
+;;; too slow.
+;;; 
+;;; # Usage:
+;;; 
+;;;     ; for screen
+;;;     (require 'screensend)
+;;;     (global-set-key [f4] 'screen-select)
+;;;     (global-set-key [f5] 'screen-send)
+;;;   
+;;;     ; for tmux
+;;;     (require 'screensend)
+;;;     (global-set-key [f4] 'tmux-select)
+;;;     (global-set-key [f5] 'tmux-send)
+;;; 
+;;; Start a screen session:
+;;; 
+;;;     screen -S mysession
+;;; 
+;;; Or if you're using tmux:
+;;;   
+;;;     tmux new-session -s mysession
+;;; 
+;;; Now press F4 and select "mysession"
+;;; 
+;;; Now either select some text or place the cursor in between a text paragraph 
+;;; and hit F5.
+;;; 
+;;; The selected text is transmitted to the screen session.
 
 ;;; Code:
-
 
 ;;;###autoload
 (defun screen-list ()
@@ -225,3 +152,5 @@ block of text to the selected tmux session."
     (deactivate-mark)))
 
 (provide 'screensend)
+
+;;; screensend.el ends here
