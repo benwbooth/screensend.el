@@ -78,7 +78,7 @@
 (defun screen-select (session)
   "Select a screen session"
   (interactive
-   (list (completing-read "Select a screen session:" (screen-list))))
+   (list (completing-read "Select a screen session: " (screen-list))))
   (setq screen-session session))
 
 ;;;###autoload
@@ -124,7 +124,7 @@ block of text to the dedicated multi-term buffer"
 (defun tmux-select (session)
   "Select a tmux session."
   (interactive
-   (list (completing-read "Select a tmux session:" (tmux-list))))
+   (list (completing-read "Select a tmux session: " (tmux-list))))
   (setq tmux-session session))
 
 ;;;###autoload
