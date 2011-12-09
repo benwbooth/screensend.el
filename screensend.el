@@ -61,6 +61,9 @@
 
 ;;; Code:
 
+(make-variable-buffer-local 'screen-session)
+(make-variable-buffer-local 'tmux-session)
+
 (defun screen-list ()
   "Get list of active screen sessions."
   (let ((output (with-output-to-string
