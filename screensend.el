@@ -63,6 +63,44 @@
 
 (make-variable-buffer-local 'screen-session)
 (make-variable-buffer-local 'tmux-session)
+(make-variable-buffer-local 'konsole-session)
+
+(defun konsole-list ()
+  "Get list of active konsole sessions."
+  (let ((output (with-output-to-string
+                  (with-current-buffer standard-output
+                    (call-process "qdbus" nil '(t nil) nil "org.kde.konsole"))))
+        (re "^/Sessions/\\([0-9]+\\)$")
+        (sessions '()))
+    (when (string-match re output)
+      (push (match-string 1 output) sessions))
+    (while (string-match re output (match-end 1))
+      (push (match-string 1 output) sessions))
+    sessions))
+
+;;;###autoload
+(defun konsole-select (session)
+  "Select a konsole session"
+  (interactive
+   (list (completing-read "Select a konsole session: " (konsole-list))))
+  (setq konsole-session session))
+
+;;;###autoload
+(defun konsole-send ()
+  "Send selected region or currently-surrounding blank line-separated \
+block of text to the konsole session."
+  (interactive)
+  (when (not konsole-session)
+    (call-interactively 'konsole-select))
+  (let ((selected (progn 
+                    (when (equal mark-active nil) 
+                      (mark-paragraph))
+                    (concat (buffer-substring (mark) (point)) "\n"))))
+    (call-process "qdbus" nil nil nil
+                  "org.kde.konsole"
+                  (concat "/Sessions/" konsole-session)
+                  "sendText" selected)
+    (deactivate-mark)))
 
 (defun screen-list ()
   "Get list of active screen sessions."
@@ -87,7 +125,7 @@
 ;;;###autoload
 (defun screen-send ()
   "Send selected region or currently-surrounding blank line-separated \
-block of text to the dedicated multi-term buffer"
+block of text to the screen session."
   (interactive)
   (when (not screen-session)
     (call-interactively 'screen-select))
