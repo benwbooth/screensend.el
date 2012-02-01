@@ -70,7 +70,7 @@
   (let ((output (with-output-to-string
                   (with-current-buffer standard-output
                     (call-process "qdbus" nil '(t nil) nil "org.kde.konsole"))))
-        (re "^/Sessions/\\([0-9]+\\)$")
+        (re "^/Sessions/\\([^\n]+\\)$")
         (sessions '()))
     (when (string-match re output)
       (push (match-string 1 output) sessions))
