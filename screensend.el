@@ -94,8 +94,9 @@ block of text to the konsole session."
     (call-interactively 'konsole-select))
   (let ((selected (progn 
                     (when (equal mark-active nil) 
-                      (mark-paragraph))
-                    (concat (buffer-substring (mark) (point)) "\n"))))
+                      (mark-paragraph)
+                      (skip-chars-forward " \t\n"))
+                    (buffer-substring (mark) (point)))))
     (call-process "qdbus" nil nil nil
                   "org.kde.konsole"
                   (concat "/Sessions/" konsole-session)
@@ -131,8 +132,9 @@ block of text to the screen session."
     (call-interactively 'screen-select))
   (let ((selected (progn 
                     (when (equal mark-active nil) 
-                      (mark-paragraph))
-                    (concat (buffer-substring (mark) (point)) "\n")))
+                      (mark-paragraph)
+                      (skip-chars-forward " \t\n"))
+                    (buffer-substring (mark) (point))))
         (tmpfile (make-temp-file "screen-send.")))
     (with-temp-file tmpfile
       (insert selected))
@@ -177,8 +179,9 @@ block of text to the selected tmux session."
     (call-interactively 'tmux-select))
   (let ((selected (progn 
                     (when (equal mark-active nil) 
-                      (mark-paragraph))
-                    (concat (buffer-substring (mark) (point)) "\n")))
+                      (mark-paragraph)
+                      (skip-chars-forward " \t\n"))
+                    (buffer-substring (mark) (point))))
         (tmpfile (make-temp-file "tmux-send.")))
     (with-temp-file tmpfile
       (insert selected))
