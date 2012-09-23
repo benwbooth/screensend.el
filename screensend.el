@@ -64,6 +64,73 @@
 (make-variable-buffer-local 'screen-session)
 (make-variable-buffer-local 'tmux-session)
 (make-variable-buffer-local 'konsole-session)
+(make-variable-buffer-local 'iterm-session)
+
+(defun iterm-list ()
+  "Get list of active iTerm sessions."
+  (split-string
+   (with-output-to-string
+     (with-current-buffer standard-output
+       (call-process "osascript" nil '(t nil) nil "-e"
+                     "tell application \"iTerm\" to tell the terminals to return the sessions")))
+   ",[ \n]*" 't))
+
+;;;###autoload
+(defun iterm-select (session)
+  "Select an iTerm session"
+  (interactive
+   (list (completing-read "Select an iTerm session: " (iterm-list))))
+   (let ((id (with-output-to-string
+                  (with-current-buffer standard-output
+                    (call-process "osascript" nil '(t nil) nil "-e"
+                                  (concat 
+                                    "tell application \"iTerm\" to tell "
+                                    session
+                                    " to return id"))))))
+     (setq iterm-session (replace-regexp-in-string "\n$" "" id))))
+
+;;;###autoload
+(defun iterm-send ()
+  "Send selected region or currently-surrounding blank line-separated \
+block of text to the iTerm session."
+  (interactive)
+  (when (not iterm-session)
+    (call-interactively 'iterm-select))
+  (let ((selected (progn 
+                    (when (equal mark-active nil) 
+                      (mark-paragraph)
+                      (skip-chars-forward " \t\n"))
+                    (buffer-substring (mark) (point))))
+        (id2terminal
+         (apply 'nconc
+                (mapcar 
+                 (lambda (terminal) 
+                   (mapcar (lambda (id) (cons id terminal))
+                           (split-string
+                            (replace-regexp-in-string
+                             "\n$" ""
+                             (with-output-to-string
+                               (with-current-buffer standard-output
+                                 (call-process "osascript" nil '(t nil) nil "-e"
+                                               (concat "tell application \"iTerm\" to tell " terminal
+                                                       " to return id of sessions"))))) ",[ \n]*" 't)))
+                 (split-string
+                  (replace-regexp-in-string
+                   "\n$" ""
+                   (with-output-to-string
+                     (with-current-buffer standard-output
+                       (call-process "osascript" nil '(t nil) nil "-e"
+                                     "tell application \"iTerm\" to return terminals")))) ",[ \n]*" 't))))
+        (tmpfile (make-temp-file "iterm-send.")))
+    (with-temp-file tmpfile
+      (insert selected))
+    (call-process "osascript" nil nil nil "-e"
+                  (concat "tell application \"iTerm\" to tell " 
+                          (assoc iterm-session id2terminal) 
+                          " to tell session id \"" iterm-session 
+                          "\" to write contents of file \"" tmpfile "\""))
+    (delete-file tmpfile)
+    (deactivate-mark)))
 
 (defun konsole-list ()
   "Get list of active konsole sessions."
