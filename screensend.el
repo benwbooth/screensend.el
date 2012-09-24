@@ -101,34 +101,14 @@ block of text to the iTerm session."
                       (mark-paragraph)
                       (skip-chars-forward " \t\n"))
                     (buffer-substring (mark) (point))))
-        (id2terminal
-         (apply 'nconc
-                (mapcar 
-                 (lambda (terminal) 
-                   (mapcar (lambda (id) (cons id terminal))
-                           (split-string
-                            (replace-regexp-in-string
-                             "\n$" ""
-                             (with-output-to-string
-                               (with-current-buffer standard-output
-                                 (call-process "osascript" nil '(t nil) nil "-e"
-                                               (concat "tell application \"iTerm\" to tell " terminal
-                                                       " to return id of sessions"))))) ",[ \n]*" 't)))
-                 (split-string
-                  (replace-regexp-in-string
-                   "\n$" ""
-                   (with-output-to-string
-                     (with-current-buffer standard-output
-                       (call-process "osascript" nil '(t nil) nil "-e"
-                                     "tell application \"iTerm\" to return terminals")))) ",[ \n]*" 't))))
         (tmpfile (make-temp-file "iterm-send.")))
     (with-temp-file tmpfile
       (insert selected))
     (call-process "osascript" nil nil nil "-e"
-                  (concat "tell application \"iTerm\" to tell " 
-                          (cdr (assoc iterm-session id2terminal))
-                          " to tell session id \"" iterm-session 
-                          "\" to write contents of file \"" tmpfile "\""))
+                  (concat 
+                    "tell application \"iTerm\" to tell terminals to tell session id \"" 
+                    iterm-session 
+                    "\" to write contents of file \"" tmpfile "\""))
     (delete-file tmpfile)
     (deactivate-mark)))
 
