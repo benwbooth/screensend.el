@@ -126,7 +126,7 @@ block of text to the iTerm session."
       (insert selected))
     (call-process "osascript" nil nil nil "-e"
                   (concat "tell application \"iTerm\" to tell " 
-                          (assoc iterm-session id2terminal) 
+                          (cdr (assoc iterm-session id2terminal))
                           " to tell session id \"" iterm-session 
                           "\" to write contents of file \"" tmpfile "\""))
     (delete-file tmpfile)
