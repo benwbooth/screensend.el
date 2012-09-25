@@ -65,9 +65,9 @@
 (make-variable-buffer-local 'tmux-session)
 (make-variable-buffer-local 'konsole-session)
 (make-variable-buffer-local 'iterm-session)
-(make-variable-buffer-local 'terminal-session)
+(make-variable-buffer-local 'macosx-terminal-session)
 
-(defun terminal-list ()
+(defun macosx-terminal-list ()
   "Get list of active Mac OS X Terminal sessions."
   (split-string
    (replace-regexp-in-string
@@ -79,19 +79,19 @@
     ",[ \n]*" 't))
 
 ;;;###autoload
-(defun terminal-select (session)
+(defun macosx-terminal-select (session)
   "Select a Mac OS X Terminal session"
   (interactive
-   (list (completing-read "Select a terminal session: " (terminal-list))))
-  (setq terminal-session session))
+   (list (completing-read "Select a terminal session: " (macosx-terminal-list))))
+  (setq macosx-terminal-session session))
 
 ;;;###autoload
-(defun terminal-send ()
+(defun macosx-terminal-send ()
   "Send selected region or currently-surrounding blank line-separated \
 block of text to the Mac OS X Terminal session."
   (interactive)
-  (when (not terminal-session)
-    (call-interactively 'terminal-select))
+  (when (not macosx-terminal-session)
+    (call-interactively 'macosx-terminal-select))
   (let ((selected (progn 
                     (when (equal mark-active nil) 
                       (mark-paragraph)
@@ -106,7 +106,7 @@ block of text to the Mac OS X Terminal session."
                   "-e" "set c to (read f)"
                   "-e" (concat 
                         "tell application \"Terminal\" to do script c in first tab of first window where tty is \""
-                        terminal-session 
+                        macosx-terminal-session 
                         "\""))
     (delete-file tmpfile)
     (deactivate-mark)))
