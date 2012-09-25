@@ -65,6 +65,52 @@
 (make-variable-buffer-local 'tmux-session)
 (make-variable-buffer-local 'konsole-session)
 (make-variable-buffer-local 'iterm-session)
+(make-variable-buffer-local 'terminal-session)
+
+(defun terminal-list ()
+  "Get list of active Mac OS X Terminal sessions."
+  (split-string
+   (replace-regexp-in-string
+    "\n$" ""
+    (with-output-to-string
+      (with-current-buffer standard-output
+        (call-process "osascript" nil '(t nil) nil "-e"
+                      "tell application \"Terminal\" to tell windows to tell tabs to return tty"))))
+    ",[ \n]*" 't))
+
+;;;###autoload
+(defun terminal-select (session)
+  "Select a Mac OS X Terminal session"
+  (interactive
+   (list (completing-read "Select a terminal session: " (terminal-list))))
+  (setq terminal-session session))
+
+;;;###autoload
+(defun terminal-send ()
+  "Send selected region or currently-surrounding blank line-separated \
+block of text to the Mac OS X Terminal session."
+  (interactive)
+  (when (not terminal-session)
+    (call-interactively 'terminal-select))
+  (let ((selected (progn 
+                    (when (equal mark-active nil) 
+                      (mark-paragraph)
+                      (skip-chars-forward " \t\n"))
+                    (buffer-substring (mark) (point))))
+        (tmpfile (make-temp-file "terminal-send.")))
+    (with-temp-file tmpfile
+      (insert selected))
+    (call-process "osascript" nil nil nil
+                  "-e" (concat "set f to \"" tmpfile "\"")
+                  "-e" "open for access f"
+                  "-e" "set c to (read f)"
+                  "-e" (concat 
+                        "tell application \"Terminal\" to do script c in first tab of first window where tty is \""
+                        terminal-session 
+                        "\""))
+    (delete-file tmpfile)
+    (deactivate-mark)))
+
 
 (defun iterm-list ()
   "Get list of active iTerm sessions."
