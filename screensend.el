@@ -96,7 +96,8 @@ block of text to the Mac OS X Terminal session."
                     (when (equal mark-active nil) 
                       (mark-paragraph)
                       (skip-chars-forward " \t\n"))
-                    (buffer-substring (mark) (point))))
+                    (replace-regexp-in-string 
+                      "\n$" "" (buffer-substring (mark) (point)))))
         (tmpfile (make-temp-file "terminal-send.")))
     (with-temp-file tmpfile
       (insert selected))
