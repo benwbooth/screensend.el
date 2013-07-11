@@ -115,12 +115,15 @@ block of text to the Mac OS X Terminal session."
 
 (defun iterm-list ()
   "Get list of active iTerm sessions."
-  (split-string
-   (with-output-to-string
-     (with-current-buffer standard-output
-       (call-process "osascript" nil '(t nil) nil "-e"
-                     "tell application \"iTerm\" to tell the terminals to return the sessions")))
-   ",[ \n]*" 't))
+  (mapcar
+   (lambda (string)
+     (replace-regexp-in-string "\\`[ \t\n]*" "" (replace-regexp-in-string "[ \t\n]*\\'" "" string)))
+   (split-string
+    (with-output-to-string
+      (with-current-buffer standard-output
+        (call-process "osascript" nil '(t nil) nil "-e"
+                      "tell application \"iTerm\" to tell the terminals to return the sessions")))
+    "," 't)))
 
 ;;;###autoload
 (defun iterm-select (session)
