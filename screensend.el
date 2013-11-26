@@ -105,10 +105,13 @@ block of text to the Mac OS X Terminal session."
                     (replace-regexp-in-string 
                      "\n$" "" (buffer-substring (mark) (point)))))
         (tmpfile (make-temp-file "terminal-send.")))
+    ;; Mac OS X terminal's send text function automatically adds a newline to
+    ;; the end of the text if it isn't already there, so we have to send chunks
+    ;; line-by-line instead of char-by-char.
     (mapcar (lambda (chunk)
               (with-temp-file tmpfile
                 (erase-buffer)
-                (insert (apply 'concat chunk)))
+                (insert (mapconcat 'identity chunk "\n")))
               (call-process "osascript" nil nil nil
                             "-e" (concat "set f to \"" tmpfile "\"")
                             "-e" "open for access f"
@@ -118,7 +121,7 @@ block of text to the Mac OS X Terminal session."
                                   macosx-terminal-session 
                                   "\""))
             (sleep-for screensend-sleep-for))
-            (-partition-all screensend-chunk-size (split-string selected "")))
+            (-partition-all (max 1 (/ screensend-chunk-size 40)) (split-string selected "\n")))
     (delete-file tmpfile)
     (deactivate-mark)))
 
