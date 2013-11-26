@@ -3,4 +3,5 @@
   :description "Send blocks of text from emacs to screen or tmux sessions"
   :type git
   :url "http://github.com/benbooth5/screensend.el.git"
-  :features screensend)
+  :features screensend
+  :depends (dash))

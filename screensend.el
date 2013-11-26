@@ -9,6 +9,7 @@
 ;; EmacsWiki: http://www.emacswiki.org/emacs/ScreenSend
 ;; Github: https://github.com/benbooth5/screensend.el 
 ;; URL: https://raw.github.com/benbooth5/screensend.el/master/screensend.el 
+;; Package-Requires: ((dash "1.8.0"))
 
 ;; This program is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
@@ -61,11 +62,16 @@
 
 ;;; Code:
 
+(require 'dash)
+
 (make-variable-buffer-local 'screen-session)
 (make-variable-buffer-local 'tmux-session)
 (make-variable-buffer-local 'konsole-session)
 (make-variable-buffer-local 'iterm-session)
 (make-variable-buffer-local 'macosx-terminal-session)
+
+(setq screensend-chunk-size 512)
+(setq screensend-sleep-for 0)
 
 (defun macosx-terminal-list ()
   "Get list of active Mac OS X Terminal sessions."
@@ -97,18 +103,22 @@ block of text to the Mac OS X Terminal session."
                       (mark-paragraph)
                       (skip-chars-forward " \t\n"))
                     (replace-regexp-in-string 
-                      "\n$" "" (buffer-substring (mark) (point)))))
+                     "\n$" "" (buffer-substring (mark) (point)))))
         (tmpfile (make-temp-file "terminal-send.")))
-    (with-temp-file tmpfile
-      (insert selected))
-    (call-process "osascript" nil nil nil
-                  "-e" (concat "set f to \"" tmpfile "\"")
-                  "-e" "open for access f"
-                  "-e" "set c to (read f)"
-                  "-e" (concat 
-                        "tell application \"Terminal\" to do script c in first tab of first window where tty is \""
-                        macosx-terminal-session 
-                        "\""))
+    (mapcar (lambda (chunk)
+              (with-temp-file tmpfile
+                (erase-buffer)
+                (insert (apply 'concat chunk)))
+              (call-process "osascript" nil nil nil
+                            "-e" (concat "set f to \"" tmpfile "\"")
+                            "-e" "open for access f"
+                            "-e" "set c to (read f)"
+                            "-e" (concat 
+                                  "tell application \"Terminal\" to do script c in first tab of first window where tty is \""
+                                  macosx-terminal-session 
+                                  "\""))
+            (sleep-for screensend-sleep-for))
+            (-partition-all screensend-chunk-size (split-string selected "")))
     (delete-file tmpfile)
     (deactivate-mark)))
 
@@ -152,13 +162,17 @@ block of text to the iTerm session."
                       (skip-chars-forward " \t\n"))
                     (buffer-substring (mark) (point))))
         (tmpfile (make-temp-file "iterm-send.")))
-    (with-temp-file tmpfile
-      (insert selected))
-    (call-process "osascript" nil nil nil "-e"
-                  (concat 
-                    "tell application \"iTerm\" to tell terminals to tell session id \"" 
-                    iterm-session 
-                    "\" to write contents of file \"" tmpfile "\""))
+    (mapcar (lambda (chunk)
+              (with-temp-file tmpfile
+                (erase-buffer)
+                (insert (apply 'concat chunk)))
+              (call-process "osascript" nil nil nil "-e"
+                            (concat 
+                             "tell application \"iTerm\" to tell terminals to tell session id \"" 
+                             iterm-session 
+                             "\" to write contents of file \"" tmpfile "\""))
+              (sleep-for screensend-sleep-for))
+            (-partition-all screensend-chunk-size (split-string selected "")))
     (delete-file tmpfile)
     (deactivate-mark)))
 
@@ -194,10 +208,13 @@ block of text to the konsole session."
                       (mark-paragraph)
                       (skip-chars-forward " \t\n"))
                     (buffer-substring (mark) (point)))))
-    (call-process "qdbus" nil nil nil
-                  "org.kde.konsole"
-                  (concat "/Sessions/" konsole-session)
-                  "sendText" selected)
+    (mapcar (lambda (chunk)
+              (call-process "qdbus" nil nil nil
+                            "org.kde.konsole"
+                            (concat "/Sessions/" konsole-session)
+                            "sendText" (apply 'concat chunk))
+              (sleep-for screensend-sleep-for))
+            (-partition-all screensend-chunk-size (split-string selected "")))
     (deactivate-mark)))
 
 (defun screen-list ()
@@ -233,17 +250,21 @@ block of text to the screen session."
                       (skip-chars-forward " \t\n"))
                     (buffer-substring (mark) (point))))
         (tmpfile (make-temp-file "screen-send.")))
-    (with-temp-file tmpfile
-      (insert selected))
-    (call-process "screen" nil nil nil
-                  "-S" screen-session
-                  "-X" "eval"
-                  "msgminwait 0"
-                  "msgwait 0"
-                  (concat "readbuf " (shell-quote-argument tmpfile))
-                  "paste ."
-                  "msgwait 5"
-                  "msgminwait 1")
+    (mapcar (lambda (chunk)
+              (with-temp-file tmpfile
+                (erase-buffer)
+                (insert (apply 'concat chunk)))
+              (call-process "screen" nil nil nil
+                            "-S" screen-session
+                            "-X" "eval"
+                            "msgminwait 0"
+                            "msgwait 0"
+                            (concat "readbuf " (shell-quote-argument tmpfile))
+                            "paste ."
+                            "msgwait 5"
+                            "msgminwait 1")
+              (sleep-for screensend-sleep-for))
+            (-partition-all screensend-chunk-size (split-string selected "")))
     (delete-file tmpfile)
     (deactivate-mark)))
 
@@ -280,11 +301,15 @@ block of text to the selected tmux session."
                       (skip-chars-forward " \t\n"))
                     (buffer-substring (mark) (point))))
         (tmpfile (make-temp-file "tmux-send.")))
-    (with-temp-file tmpfile
-      (insert selected))
-    (call-process "tmux" nil nil nil
-                  "load-buffer" tmpfile ";"
-                  "paste-buffer" "-t" tmux-session ";")
+    (mapcar (lambda (chunk)
+              (with-temp-file tmpfile
+                (erase-buffer)
+                (insert (apply 'concat chunk)))
+              (call-process "tmux" nil nil nil
+                            "load-buffer" tmpfile ";"
+                            "paste-buffer" "-t" tmux-session ";")
+              (sleep-for screensend-sleep-for))
+            (-partition-all screensend-chunks-size (split-string selected "")))
     (delete-file tmpfile)
     (deactivate-mark)))
 
