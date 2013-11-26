@@ -121,7 +121,7 @@ block of text to the Mac OS X Terminal session."
                                   macosx-terminal-session 
                                   "\""))
             (sleep-for screensend-sleep-for))
-            (-partition-all (max 1 (/ screensend-chunk-size 40)) (split-string selected "\n")))
+            (-partition-all (max 1 (/ screensend-chunk-size 80)) (split-string selected "\n")))
     (delete-file tmpfile)
     (deactivate-mark)))
 
