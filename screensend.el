@@ -70,7 +70,7 @@
 (make-variable-buffer-local 'iterm-session)
 (make-variable-buffer-local 'macosx-terminal-session)
 
-(setq screensend-chunk-size 512)
+(setq screensend-chunk-size 256)
 (setq screensend-sleep-for 0)
 
 (defun macosx-terminal-list ()
