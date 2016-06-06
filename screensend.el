@@ -1,10 +1,10 @@
 ;;; screensend.el --- Send blocks of text from emacs to screen or tmux sessions.
 
-;; Copyright (C) 2010-2011 Ben Booth
+;; Copyright (C) 2010-2016 Ben Booth
 ;; Author: Ben Booth <benwbooth@gmail.com>
 ;; Maintainer: Ben Booth <benwbooth@gmail.com>
 ;; Created: 2011-11-16
-;; Version: 1.0.0
+;; Version: 1.1.0
 ;; Keywords: lisp, screen, tmux, send, terminal
 ;; EmacsWiki: http://www.emacswiki.org/emacs/ScreenSend
 ;; Github: https://github.com/benbooth5/screensend.el
