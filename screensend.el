@@ -4,7 +4,8 @@
 ;; Author: Ben Booth <benwbooth@gmail.com>
 ;; Maintainer: Ben Booth <benwbooth@gmail.com>
 ;; Created: 2011-11-16
-;; Version: 1.1.0
+;; Version: 1.2.0
+;; Package-Version: 20160606.1235
 ;; Keywords: lisp, screen, tmux, send, terminal
 ;; EmacsWiki: http://www.emacswiki.org/emacs/ScreenSend
 ;; Github: https://github.com/benbooth5/screensend.el
@@ -166,7 +167,7 @@ block of text to the iTerm session."
                 (insert (apply 'concat chunk)))
               (call-process "osascript" nil nil nil "-e"
                             (concat
-                             "tell application \"iTerm\" to tell terminals to tell "
+                             "tell application \"iTerm\" to tell "
                              session
                              " to write contents of file \"" tmpfile "\""))
               (sleep-for screensend-sleep-for))
