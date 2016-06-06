@@ -7,8 +7,8 @@
 ;; Version: 1.0.0
 ;; Keywords: lisp, screen, tmux, send, terminal
 ;; EmacsWiki: http://www.emacswiki.org/emacs/ScreenSend
-;; Github: https://github.com/benbooth5/screensend.el 
-;; URL: https://raw.github.com/benbooth5/screensend.el/master/screensend.el 
+;; Github: https://github.com/benbooth5/screensend.el
+;; URL: https://raw.github.com/benbooth5/screensend.el/master/screensend.el
 ;; Package-Requires: ((dash "1.8.0"))
 
 ;; This program is free software; you can redistribute it and/or modify
@@ -27,37 +27,37 @@
 ;;;
 ;;; screensend.el
 ;;; -------------
-;;; 
+;;;
 ;;; Simple Emacs script to allow you to send selected blocks of text to a
 ;;; running screen or tmux session. This is useful for sending text to interactive
 ;;; programs like clojure, psql, etc. in cases where the built-in term-mode is
 ;;; too slow.
-;;; 
+;;;
 ;;; # Usage:
-;;; 
+;;;
 ;;;     ; for screen
 ;;;     (require 'screensend)
 ;;;     (global-set-key [f4] 'screen-select)
 ;;;     (global-set-key [f5] 'screen-send)
-;;;   
+;;;
 ;;;     ; for tmux
 ;;;     (require 'screensend)
 ;;;     (global-set-key [f4] 'tmux-select)
 ;;;     (global-set-key [f5] 'tmux-send)
-;;; 
+;;;
 ;;; Start a screen session:
-;;; 
+;;;
 ;;;     screen -S mysession
-;;; 
+;;;
 ;;; Or if you're using tmux:
-;;;   
+;;;
 ;;;     tmux new-session -s mysession
-;;; 
+;;;
 ;;; Now press F4 and select "mysession"
-;;; 
-;;; Now either select some text or place the cursor in between a text paragraph 
+;;;
+;;; Now either select some text or place the cursor in between a text paragraph
 ;;; and hit F5.
-;;; 
+;;;
 ;;; The selected text is transmitted to the screen session.
 
 ;;; Code:
@@ -98,11 +98,11 @@ block of text to the Mac OS X Terminal session."
   (interactive)
   (when (not macosx-terminal-session)
     (call-interactively 'macosx-terminal-select))
-  (let ((selected (progn 
-                    (when (equal mark-active nil) 
+  (let ((selected (progn
+                    (when (equal mark-active nil)
                       (mark-paragraph)
                       (skip-chars-forward " \t\n"))
-                    (replace-regexp-in-string 
+                    (replace-regexp-in-string
                      "\n$" "" (buffer-substring (mark) (point)))))
         (tmpfile (make-temp-file "terminal-send.")))
     ;; Mac OS X terminal's send text function automatically adds a newline to
@@ -116,9 +116,9 @@ block of text to the Mac OS X Terminal session."
                             "-e" (concat "set f to \"" tmpfile "\"")
                             "-e" "open for access f"
                             "-e" "set c to (read f)"
-                            "-e" (concat 
+                            "-e" (concat
                                   "tell application \"Terminal\" to do script c in first tab of first window where tty is \""
-                                  macosx-terminal-session 
+                                  macosx-terminal-session
                                   "\""))
             (sleep-for screensend-sleep-for))
             (-partition-all (max 1 (/ screensend-chunk-size 80)) (split-string selected "\n")))
@@ -135,7 +135,7 @@ block of text to the Mac OS X Terminal session."
     (with-output-to-string
       (with-current-buffer standard-output
         (call-process "osascript" nil '(t nil) nil "-e"
-                      "tell application \"iTerm\" to tell the terminals to return the sessions")))
+                      "tell application \"iTerm\" to tell windows to tell tabs to return sessions")))
     "," 't)))
 
 ;;;###autoload
@@ -143,14 +143,7 @@ block of text to the Mac OS X Terminal session."
   "Select an iTerm session"
   (interactive
    (list (completing-read "Select an iTerm session: " (iterm-list))))
-   (let ((id (with-output-to-string
-                  (with-current-buffer standard-output
-                    (call-process "osascript" nil '(t nil) nil "-e"
-                                  (concat 
-                                    "tell application \"iTerm\" to tell "
-                                    session
-                                    " to return id"))))))
-     (setq iterm-session (replace-regexp-in-string "\n$" "" id))))
+  (setq iterm-session session))
 
 ;;;###autoload
 (defun iterm-send ()
@@ -159,21 +152,23 @@ block of text to the iTerm session."
   (interactive)
   (when (not iterm-session)
     (call-interactively 'iterm-select))
-  (let ((selected (progn 
-                    (when (equal mark-active nil) 
+  (let ((selected (progn
+                    (when (equal mark-active nil)
                       (mark-paragraph)
                       (skip-chars-forward " \t\n"))
-                    (buffer-substring (mark) (point))))
-        (tmpfile (make-temp-file "iterm-send.")))
+                    (buffer-substring (mark) (point))) )
+        (tmpfile (make-temp-file "iterm-send."))
+        (session (replace-regexp-in-string "session id \\(\\S-+\\)" "session id \"\\1\""
+                 (replace-regexp-in-string "window id \\(\\S-+\\)" "window id \"\\1\"" iterm-session))))
     (mapcar (lambda (chunk)
               (with-temp-file tmpfile
                 (erase-buffer)
                 (insert (apply 'concat chunk)))
               (call-process "osascript" nil nil nil "-e"
-                            (concat 
-                             "tell application \"iTerm\" to tell terminals to tell session id \"" 
-                             iterm-session 
-                             "\" to write contents of file \"" tmpfile "\""))
+                            (concat
+                             "tell application \"iTerm\" to tell terminals to tell "
+                             session
+                             " to write contents of file \"" tmpfile "\""))
               (sleep-for screensend-sleep-for))
             (-partition-all screensend-chunk-size (split-string selected "")))
     (delete-file tmpfile)
@@ -206,8 +201,8 @@ block of text to the konsole session."
   (interactive)
   (when (not konsole-session)
     (call-interactively 'konsole-select))
-  (let ((selected (progn 
-                    (when (equal mark-active nil) 
+  (let ((selected (progn
+                    (when (equal mark-active nil)
                       (mark-paragraph)
                       (skip-chars-forward " \t\n"))
                     (buffer-substring (mark) (point)))))
@@ -232,7 +227,7 @@ block of text to the konsole session."
     (while (string-match re output (match-end 1))
       (push (match-string 1 output) sessions))
     sessions))
-  
+
 ;;;###autoload
 (defun screen-select (session)
   "Select a screen session"
@@ -247,8 +242,8 @@ block of text to the screen session."
   (interactive)
   (when (not screen-session)
     (call-interactively 'screen-select))
-  (let ((selected (progn 
-                    (when (equal mark-active nil) 
+  (let ((selected (progn
+                    (when (equal mark-active nil)
                       (mark-paragraph)
                       (skip-chars-forward " \t\n"))
                     (buffer-substring (mark) (point))))
@@ -283,7 +278,7 @@ block of text to the screen session."
     (while (string-match re output (match-end 1))
       (push (match-string 1 output) sessions))
     sessions))
-  
+
 ;;;###autoload
 (defun tmux-select (session)
   "Select a tmux session."
@@ -298,8 +293,8 @@ block of text to the selected tmux session."
   (interactive)
   (when (not tmux-session)
     (call-interactively 'tmux-select))
-  (let ((selected (progn 
-                    (when (equal mark-active nil) 
+  (let ((selected (progn
+                    (when (equal mark-active nil)
                       (mark-paragraph)
                       (skip-chars-forward " \t\n"))
                     (buffer-substring (mark) (point))))
