@@ -308,7 +308,7 @@ block of text to the selected tmux session."
                             "load-buffer" tmpfile ";"
                             "paste-buffer" "-t" tmux-session ";")
               (sleep-for screensend-sleep-for))
-            (-partition-all screensend-chunks-size (split-string selected "")))
+            (-partition-all screensend-chunk-size (split-string selected "")))
     (delete-file tmpfile)
     (deactivate-mark)))
 
